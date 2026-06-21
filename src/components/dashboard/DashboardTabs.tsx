@@ -8,8 +8,9 @@ import {
   LayoutDashboard, Receipt, Package, Users, BarChart3, Settings, CreditCard,
   Search, Filter, ChevronDown, Eye, Loader2, Plus, Edit3, Trash2, X,
   DollarSign, ShoppingCart, TrendingUp, Download, Store, MessageCircle,
-  Truck, Save, Check, ToggleRight, ToggleLeft, HeadphonesIcon, Send, History,
+  Truck, Save, Check, ToggleRight, ToggleLeft, HeadphonesIcon, Send, History, Paintbrush,
 } from "lucide-react"
+import { TemplateSelector } from "./TemplateSelector"
 
 // ─── Tabs ──────────────────────────────────────────────
 const tabs = [
@@ -20,6 +21,7 @@ const tabs = [
   { id: "reports", label: "التقارير", icon: BarChart3 },
   { id: "settings", label: "الإعدادات", icon: Settings },
   { id: "subscription", label: "الاشتراك", icon: CreditCard },
+  { id: "appearance", label: "شكل المتجر", icon: Paintbrush },
 ]
 
 const statusLabels: Record<string, string> = {
@@ -76,6 +78,7 @@ export function DashboardTabs() {
       {activeTab === "reports" && <ReportsTab supabase={supabase} />}
       {activeTab === "settings" && <SettingsTab />}
       {activeTab === "subscription" && <SubscriptionTab supabase={supabase} />}
+      {activeTab === "appearance" && <TemplateSelector />}
     </div>
   )
 }
