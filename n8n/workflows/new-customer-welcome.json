@@ -1,0 +1,139 @@
+{
+  "name": "ترحيب العميل الجديد عبر واتساب (متعدد التجار)",
+  "nodes": [
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "استقبال عميل جديد",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {
+        "path": "emerald-new-customer",
+        "responseMode": "lastNode",
+        "options": {},
+        "httpMethod": "POST",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "name": "جلب إعدادات واتساب التاجر",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "whatsapp_settings",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "store_id",
+              "rightValue": "={{ $json.body.store_id || $json.body.data?.store_id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      "name": "تجهيز رسالة الترحيب",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const customer = $input.all()[0].json.body;\nconst settings = $input.all()[1].json;\n\nconst customerName = customer.data?.name || customer.name || 'عميلنا العزيز';\nconst storeName = settings.store_name || settings.name || 'المتجر';\nconst storeSlug = customer.data?.store_slug || '';\n\nconst welcomeMessage = (settings.welcome_message ||\n  `السلام عليكم {{customer_name}} 👋\\n\\n` +\n  `مرحباً بك في {{store_name}}! 🎉\\n\\n` +\n  `نحن سعداء بانضمامك إلينا. يمكنك تصفح منتجاتنا وطلب ما يعجبك عبر واتساب.\\n\\n` +\n  `للاستفسار، نحن هنا لخدمتك 💚`)\n  .replace('{{customer_name}}', customerName)\n  .replace('{{store_name}}', storeName);\n\nreturn {\n  to: customer.data?.phone || customer.phone,\n  message: welcomeMessage,\n  store_id: customer.data?.store_id || customer.store_id,\n  customer_id: customer.data?.id || customer.id,\n  customer_name: customerName,\n  store_name: storeName\n};"
+      }
+    },
+    {
+      "id": "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+      "name": "إرسال عبر API التاجر",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [750, 300],
+      "parameters": {
+        "url": "={{ $env.APP_URL }}/api/whatsapp/send",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "to", "value": "={{ $json.to }}" },
+            { "name": "message", "value": "={{ $json.message }}" },
+            { "name": "store_id", "value": "={{ $json.store_id }}" },
+            { "name": "customer_id", "value": "={{ $json.customer_id }}" },
+            { "name": "customer_name", "value": "={{ $json.customer_name }}" },
+            { "name": "store_name", "value": "={{ $json.store_name }}" }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "allowUnauthorizedCerts": false
+        },
+        "method": "POST",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+      "name": "تسجيل الرسالة",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "create",
+        "tableId": "whatsapp_messages",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            { "fieldName": "store_id", "fieldValue": "={{ $json.store_id }}" },
+            { "fieldName": "customer_id", "fieldValue": "={{ $json.customer_id }}" },
+            { "fieldName": "direction", "fieldValue": "outbound" },
+            { "fieldName": "message_type", "fieldValue": "text" },
+            { "fieldName": "content", "fieldValue": "={{ $json.message }}" },
+            { "fieldName": "status", "fieldValue": "sent" }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "استقبال عميل جديد": {
+      "main": [[ { "node": "جلب إعدادات واتساب التاجر", "type": "main", "index": 0 } ]]
+    },
+    "جلب إعدادات واتساب التاجر": {
+      "main": [[ { "node": "تجهيز رسالة الترحيب", "type": "main", "index": 0 } ]]
+    },
+    "تجهيز رسالة الترحيب": {
+      "main": [[ { "node": "إرسال عبر API التاجر", "type": "main", "index": 0 } ]]
+    },
+    "إرسال عبر API التاجر": {
+      "main": [[ { "node": "تسجيل الرسالة", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["whatsapp", "customers", "welcome", "multi-tenant"],
+  "active": false,
+  "versionId": "2.0.0"
+}

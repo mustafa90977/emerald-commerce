@@ -1,0 +1,167 @@
+{
+  "name": "تذكير السلة المهملة عبر واتساب (متعدد التجار)",
+  "nodes": [
+    {
+      "id": "1f2e3d4c-5b6a-7f8e-9d0c-1b2a3f4e5d6c",
+      "name": "مجدول يومي",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            { "mode": "everyDay", "hour": 10, "minute": 0 },
+            { "mode": "everyDay", "hour": 18, "minute": 0 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2e3d4c5b-6a7f-8e9d-0c1b-2a3f4e5d6c7b",
+      "name": "جلب الطلبات المعلقة",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "status",
+              "rightValue": "pending",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "3d4c5b6a-7f8e-9d0c-1b2a-3f4e5d6c7b8a",
+      "name": "جلب العملاء المرتبطين",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 600],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "phone",
+              "rightValue": "=''",
+              "operator": "isNot"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "4c5b6a7f-8e9d-0c1b-2a3f-4e5d6c7b8a9d",
+      "name": "تجهيز رسالة التذكير",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const order = $input.all()[0].json;\nconst customers = $input.all()[1];\n\nconst customer = customers.find(c => c.id === order.customer_id) || {};\n\nconst itemsList = (order.items || []).map(item =>\n  `- ${item.name} (×${item.quantity})`\n).join('\\n');\n\nconst message = `السلام عليكم 👋\\n\\n` +\n  `لاحظنا أن لديك طلباً معلقاً في متجرنا:\\n\\n` +\n  `${itemsList || 'منتجات في سلة التسوق'}\\n\\n` +\n  `💰 الإجمالي: ${order.total || 0} ريال\\n\\n` +\n  `هل تريد إكمال الطلب؟ 🛒\\n\\n` +\n  `للإكمال، تواصل معنا وسنقوم بمساعدتك! 💚`;\n\nreturn {\n  to: customer.phone,\n  message: message,\n  store_id: order.store_id,\n  order_id: order.id,\n  customer_id: order.customer_id,\n  order_number: order.order_number\n};"
+      }
+    },
+    {
+      "id": "5b6a7f8e-9d0c-1b2a-3f4e-5d6c7b8a9d0c",
+      "name": "إرسال عبر API التاجر",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [750, 300],
+      "parameters": {
+        "url": "={{ $env.APP_URL }}/api/whatsapp/send",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "to", "value": "={{ $json.to }}" },
+            { "name": "message", "value": "={{ $json.message }}" },
+            { "name": "store_id", "value": "={{ $json.store_id }}" },
+            { "name": "order_id", "value": "={{ $json.order_id }}" },
+            { "name": "customer_id", "value": "={{ $json.customer_id }}" }
+          ]
+        },
+        "options": { "timeout": 15000 },
+        "method": "POST",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6a7f8e9d-0c1b-2a3f-4e5d-6c7b8a9d0c1b",
+      "name": "تسجيل التذكير",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "create",
+        "tableId": "whatsapp_messages",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            { "fieldName": "store_id", "fieldValue": "={{ $json.store_id }}" },
+            { "fieldName": "order_id", "fieldValue": "={{ $json.order_id }}" },
+            { "fieldName": "customer_id", "fieldValue": "={{ $json.customer_id }}" },
+            { "fieldName": "direction", "fieldValue": "outbound" },
+            { "fieldName": "message_type", "fieldValue": "text" },
+            { "fieldName": "content", "fieldValue": "={{ $json.message }}" },
+            { "fieldName": "status", "fieldValue": "sent" },
+            { "fieldName": "metadata", "fieldValue": "={\"type\": \"abandoned_cart_reminder\"}" }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "مجدول يومي": {
+      "main": [[ { "node": "جلب الطلبات المعلقة", "type": "main", "index": 0 } ]]
+    },
+    "جلب الطلبات المعلقة": {
+      "main": [[ { "node": "جلب العملاء المرتبطين", "type": "main", "index": 0 } ]]
+    },
+    "جلب العملاء المرتبطين": {
+      "main": [[ { "node": "تجهيز رسالة التذكير", "type": "main", "index": 0 } ]]
+    },
+    "تجهيز رسالة التذكير": {
+      "main": [[ { "node": "إرسال عبر API التاجر", "type": "main", "index": 0 } ]]
+    },
+    "إرسال عبر API التاجر": {
+      "main": [[ { "node": "تسجيل التذكير", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["whatsapp", "cron", "marketing", "multi-tenant"],
+  "active": false,
+  "versionId": "2.0.0"
+}

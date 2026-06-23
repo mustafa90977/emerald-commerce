@@ -4,20 +4,7 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Profiles (extends Supabase auth.users)
-CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  email TEXT,
-  full_name TEXT,
-  role TEXT CHECK (role IN ('merchant', 'admin', 'super_admin')) DEFAULT 'merchant',
-  phone TEXT,
-  avatar_url TEXT,
-  store_id UUID REFERENCES public.stores(id),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Stores
+-- Stores (created first because profiles references it)
 CREATE TABLE public.stores (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
@@ -27,6 +14,19 @@ CREATE TABLE public.stores (
   settings JSONB DEFAULT '{}',
   owner_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Profiles (extends Supabase auth.users)
+CREATE TABLE public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT,
+  full_name TEXT,
+  role TEXT CHECK (role IN ('merchant', 'admin', 'super_admin')) DEFAULT 'merchant',
+  phone TEXT,
+  avatar_url TEXT,
+  store_id UUID REFERENCES public.stores(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

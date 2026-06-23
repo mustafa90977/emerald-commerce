@@ -43,3 +43,44 @@ export const NAV_ITEMS = {
 
 export const APP_NAME = "Emerald Commerce"
 export const APP_DESCRIPTION = "منصة التجارة المحادثتية الأولى في الشرق الأوسط"
+
+// ====== n8n & WhatsApp Integration ======
+
+export const N8N_EVENTS = {
+  ORDER_CREATED: "order.created",
+  ORDER_UPDATED: "order.updated",
+  ORDER_STATUS_CHANGED: "order.status_changed",
+  CUSTOMER_CREATED: "customer.created",
+  CUSTOMER_UPDATED: "customer.updated",
+  PRODUCT_CREATED: "product.created",
+  SUPPORT_TICKET_CREATED: "support_ticket.created",
+  WHATSAPP_MESSAGE_RECEIVED: "whatsapp.message_received",
+  WHATSAPP_MESSAGE_STATUS: "whatsapp.message_status",
+} as const
+
+export const N8N_WEBHOOK_PATHS = {
+  ORDER_CONFIRMATION: "/webhook/emerald-order-confirmation",
+  NEW_CUSTOMER: "/webhook/emerald-new-customer",
+  WHATSAPP_INCOMING: "/webhook/emerald-whatsapp-incoming",
+} as const
+
+export const WHATSAPP_ROUTES = {
+  SEND: "/api/whatsapp/send",
+  VERIFY: "/api/whatsapp/verify",
+  REGISTER_WEBHOOK: "/api/whatsapp/register-webhook",
+} as const
+
+export const WHATSAPP_MESSAGE_TEMPLATES = {
+  WELCOME: {
+    name: "welcome_message",
+    description: "رسالة الترحيب بالعميل الجديد",
+  },
+  ORDER_CONFIRMATION: {
+    name: "order_confirmation_message",
+    description: "رسالة تأكيد الطلب",
+  },
+  ORDER_SHIPPED: {
+    name: "order_shipped_message",
+    description: "رسالة إشعار الشحن",
+  },
+} as const

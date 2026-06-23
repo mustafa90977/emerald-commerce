@@ -454,11 +454,7 @@ function SettingsTab() {
           <div><label className="block text-sm font-medium mb-1">اسم المتجر</label><input defaultValue="متجري" className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-primary" /></div>
           <div><label className="block text-sm font-medium mb-1">الوصف</label><textarea defaultValue="متجر إلكتروني" rows={3} className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-primary" /></div>
         </div>}
-        {active === "whatsapp" && <div className="space-y-4">
-          <h3 className="font-bold">واتساب</h3>
-          <div><label className="block text-sm font-medium mb-1">رقم واتساب</label><input defaultValue="+966500000000" dir="ltr" className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-primary" /></div>
-          <div><label className="block text-sm font-medium mb-1">رسالة الترحيب</label><textarea defaultValue="السلام عليكم!" rows={3} className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-primary" /></div>
-        </div>}
+        {active === "whatsapp" && <WhatsAppTab />}
         {active === "payment" && <div className="space-y-4">
           <h3 className="font-bold">بوابات الدفع</h3>
           {["مدى", "فيزا/ماستركارد", "آبل باي", "Stripe"].map((m) => (
@@ -479,6 +475,108 @@ function SettingsTab() {
           <button onClick={save} className="rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-white"><Save className="inline h-4 w-4 ml-1" />حفظ</button>
           {saved && <span className="text-sm text-emerald-600">تم الحفظ</span>}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── WhatsApp Tab ──────────────────────────────────
+function WhatsAppTab() {
+  const supabase = createClient()
+  const [phoneNumberId, setPhoneNumberId] = useState("")
+  const [accessToken, setAccessToken] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [welcomeMessage, setWelcomeMessage] = useState("السلام عليكم! كيف يمكننا مساعدتك؟")
+  const [connected, setConnected] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [connecting, setConnecting] = useState(false)
+  const [result, setResult] = useState<"success" | "error" | null>(null)
+  const [resultMsg, setResultMsg] = useState("")
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.from("whatsapp_settings").select("*").single().then(({ data }) => {
+      if (data) {
+        setPhoneNumberId(data.phone_number_id || "")
+        setAccessToken(data.access_token || "")
+        setPhoneNumber(data.phone_number || "")
+        setWelcomeMessage(data.welcome_message || welcomeMessage)
+        setConnected(data.is_connected || false)
+      }
+    })
+  }, [supabase])
+
+  async function testConnection() {
+    if (!phoneNumberId || !accessToken) return
+    setTesting(true); setResult(null)
+    try {
+      const res = await fetch("/api/whatsapp/verify", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken }),
+      })
+      const d = await res.json()
+      setResult(d.valid ? "success" : "error")
+      setResultMsg(d.message || "")
+    } catch { setResult("error"); setResultMsg("فشل الاتصال") }
+    finally { setTesting(false) }
+  }
+
+  async function handleConnect() {
+    if (!phoneNumberId || !accessToken || !phoneNumber) return
+    setConnecting(true); setResult(null)
+    try {
+      const res = await fetch("/api/whatsapp/register-webhook", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number_id: phoneNumberId, access_token: accessToken, phone_number: phoneNumber }),
+      })
+      const d = await res.json()
+      if (d.success) { setConnected(true); setResult("success"); setResultMsg(d.message) }
+      else { setResult("error"); setResultMsg(d.error || "فشل") }
+    } catch { setResult("error"); setResultMsg("فشل الاتصال") }
+    finally { setConnecting(false) }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold">واتساب</h3>
+        {connected
+          ? <span className="flex items-center gap-1 text-sm text-emerald-600"><Check className="h-4 w-4" />متصل</span>
+          : <span className="flex items-center gap-1 text-sm text-red-500"><X className="h-4 w-4" />غير متصل</span>}
+      </div>
+      <p className="text-xs text-on-surface-variant">اربط رقم واتساب الخاص بك لإرسال الإشعارات للعملاء عبر رقمك.</p>
+      <div className="rounded-xl border border-outline-variant/30 bg-surface-container/20 p-4 space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">Phone Number ID</label>
+          <input value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} dir="ltr" placeholder="123456789012345" className="w-full rounded-xl border px-4 py-2 text-sm outline-none focus:border-primary font-mono" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Access Token</label>
+          <input value={accessToken} onChange={(e) => setAccessToken(e.target.value)} dir="ltr" type="password" placeholder="EAAx..." className="w-full rounded-xl border px-4 py-2 text-sm outline-none focus:border-primary font-mono" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">رقم واتساب</label>
+          <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} dir="ltr" placeholder="+966500000000" className="w-full rounded-xl border px-4 py-2 text-sm outline-none focus:border-primary" />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button onClick={testConnection} disabled={testing || !phoneNumberId || !accessToken}
+            className="flex items-center gap-1.5 rounded-xl border border-outline-variant/50 px-4 py-2 text-xs font-medium hover:bg-surface-container disabled:opacity-50">
+            {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Settings className="h-3 w-3" />}اختبار
+          </button>
+          <button onClick={handleConnect} disabled={connecting || !phoneNumberId || !accessToken || !phoneNumber}
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-medium text-white disabled:opacity-50">
+            {connecting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}{connecting ? "جاري..." : "ربط"}
+          </button>
+        </div>
+        {result && (
+          <div className={cn("rounded-lg p-2.5 text-xs", result === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
+            {resultMsg}
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">رسالة الترحيب</label>
+        <textarea value={welcomeMessage} onChange={(e) => setWelcomeMessage(e.target.value)} rows={2} className="w-full rounded-xl border px-4 py-2 text-sm outline-none focus:border-primary" />
       </div>
     </div>
   )

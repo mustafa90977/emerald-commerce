@@ -129,3 +129,97 @@ export interface AuditLog {
   ip_address: string
   created_at: string
 }
+
+// ====== WhatsApp & n8n Integration Types ======
+
+export type MessageDirection = "outbound" | "inbound"
+export type MessageType = "text" | "template" | "image" | "interactive"
+export type MessageStatus = "sent" | "delivered" | "read" | "failed" | "pending"
+export type TemplateCategory = "marketing" | "utility" | "authentication"
+export type TemplateStatus = "pending" | "approved" | "rejected" | "paused"
+
+export interface WhatsAppSettings {
+  id: string
+  store_id: string
+  phone_number: string
+  phone_number_id: string
+  business_account_id: string
+  access_token: string
+  webhook_verify_token: string
+  welcome_message: string
+  order_confirmation_message: string
+  order_shipped_message: string
+  is_connected: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface WhatsAppMessage {
+  id: string
+  store_id: string
+  order_id?: string
+  customer_id?: string
+  direction: MessageDirection
+  message_type: MessageType
+  content: string
+  template_name?: string
+  wa_message_id?: string
+  status: MessageStatus
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface WhatsAppTemplate {
+  id: string
+  store_id: string
+  name: string
+  language: string
+  category: TemplateCategory
+  template_data: Record<string, unknown>
+  meta_template_id?: string
+  status: TemplateStatus
+  created_at: string
+  updated_at: string
+}
+
+export type N8nEvent =
+  | "order.created"
+  | "order.updated"
+  | "order.status_changed"
+  | "customer.created"
+  | "customer.updated"
+  | "product.created"
+  | "support_ticket.created"
+  | "whatsapp.message_received"
+  | "whatsapp.message_status"
+
+export interface N8nWebhook {
+  id: string
+  store_id: string
+  event: N8nEvent
+  webhook_url: string
+  is_active: boolean
+  secret_token?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface N8nExecution {
+  id: string
+  store_id: string
+  workflow_name: string
+  event: string
+  payload: Record<string, unknown>
+  response?: Record<string, unknown>
+  status: "success" | "failed" | "pending"
+  error_message?: string
+  executed_at: string
+}
+
+export interface N8nWebhookPayload {
+  event: N8nEvent
+  store_id: string
+  store_name?: string
+  timestamp: string
+  data: Record<string, unknown>
+}

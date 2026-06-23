@@ -1,0 +1,188 @@
+{
+  "name": "توجيه الرسائل الواردة من واتساب (متعدد التجار)",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "name": "استقبال رسالة واردة",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {
+        "path": "emerald-whatsapp-incoming",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          },
+          "responseCode": 200,
+          "responseData": "json",
+          "responseJson": "{\"status\": \"received\"}"
+        },
+        "httpMethod": "POST",
+        "responseData": "json"
+      }
+    },
+    {
+      "id": "b2c3d4e5-f6a4-7b8c-9d0e-1f2a3b4c5d6e",
+      "name": "تحليل رسالة ميتا",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const payload = $input.first().json;\n\nif (!payload.entry || !payload.entry[0]?.changes?.[0]?.value) {\n  return { error: 'Invalid payload', raw: payload };\n}\n\nconst value = payload.entry[0].changes[0].value;\nconst metadata = value.metadata || {};\n\nif (!value.messages || value.messages.length === 0) {\n  return { status: 'no_message', metadata: value };\n}\n\nconst message = value.messages[0];\nconst contact = value.contacts?.[0];\n\nreturn {\n  wa_message_id: message.id,\n  from: message.from,\n  from_name: contact?.profile?.name || 'غير معروف',\n  message_type: message.type,\n  text: message.type === 'text' ? message.text.body : '',\n  phone_number_id: metadata.phone_number_id,\n  display_phone_number: metadata.display_phone_number,\n  timestamp: message.timestamp\n};"
+      }
+    },
+    {
+      "id": "c3d4e5f6-a4b7-8c9d-0e1f-2a3b4c5d6e7f",
+      "name": "تحديد التاجر من الرقم",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "whatsapp_settings",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "phone_number_id",
+              "rightValue": "={{ $json.phone_number_id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "d4e5f6a4-b7c8-9d0e-1f2a-3b4c5d6e7f8a",
+      "name": "البحث عن العميل",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 550],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "phone",
+              "rightValue": "={{ $json.from }}",
+              "operator": "contains"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "e5f6a4b7-c8d9-0e1f-2a3b-4c5d6e7f8a9b",
+      "name": "تسجيل الرسالة الواردة",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [750, 300],
+      "parameters": {
+        "operation": "create",
+        "tableId": "whatsapp_messages",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            { "fieldName": "store_id", "fieldValue": "={{ $json.store_id }}" },
+            { "fieldName": "customer_id", "fieldValue": "={{ $json.customer_id }}" },
+            { "fieldName": "direction", "fieldValue": "inbound" },
+            { "fieldName": "message_type", "fieldValue": "={{ $json.message_type }}" },
+            { "fieldName": "content", "fieldValue": "={{ $json.text }}" },
+            { "fieldName": "wa_message_id", "fieldValue": "={{ $json.wa_message_id }}" },
+            { "fieldName": "status", "fieldValue": "delivered" }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "f6a4b7c8-d9e0-1f2a-3b4c-5d6e7f8a9b0c",
+      "name": "فحص كلمة دعم",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "parameters": {
+        "dataType": "number",
+        "value1": "={{ $json.text.includes('مساعدة') || $json.text.includes('دعم') || $json.text.includes('مشكلة') || $json.text.includes('شكوى') ? 1 : 0 }}",
+        "rules": [{ "value": 1, "output": 0 }],
+        "fallbackOutput": 1
+      }
+    },
+    {
+      "id": "a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d",
+      "name": "إنشاء تذكرة دعم",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1250, 200],
+      "parameters": {
+        "operation": "create",
+        "tableId": "support_tickets",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            { "fieldName": "store_id", "fieldValue": "={{ $json.store_id }}" },
+            { "fieldName": "subject", "fieldValue": "=رسالة من واتساب - {{ $json.from_name }}" },
+            { "fieldName": "status", "fieldValue": "open" },
+            { "fieldName": "priority", "fieldValue": "medium" },
+            { "fieldName": "messages", "fieldValue": "=[{\"sender_name\": \"{{ $json.from_name }}\", \"content\": \"{{ $json.text }}\", \"created_at\": \"{{ new Date().toISOString() }}\"}]" }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "استقبال رسالة واردة": {
+      "main": [[ { "node": "تحليل رسالة ميتا", "type": "main", "index": 0 } ]]
+    },
+    "تحليل رسالة ميتا": {
+      "main": [[ { "node": "تحديد التاجر من الرقم", "type": "main", "index": 0 } ]]
+    },
+    "تحديد التاجر من الرقم": {
+      "main": [[ { "node": "تسجيل الرسالة الواردة", "type": "main", "index": 0 } ]]
+    },
+    "تسجيل الرسالة الواردة": {
+      "main": [[ { "node": "فحص كلمة دعم", "type": "main", "index": 0 } ]]
+    },
+    "فحص كلمة دعم": {
+      "main": [
+        [ { "node": "إنشاء تذكرة دعم", "type": "main", "index": 0 } ],
+        []
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["whatsapp", "incoming", "support", "multi-tenant"],
+  "active": false,
+  "versionId": "2.0.0"
+}

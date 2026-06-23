@@ -1,0 +1,193 @@
+{
+  "name": "تأكيد الطلب عبر واتساب (متعدد التجار)",
+  "nodes": [
+    {
+      "id": "2a3e4f5b-6c7d-8e9f-0a1b-2c3d4e5f6a7b",
+      "name": "استقبال الطلب",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {
+        "path": "emerald-order-confirmation",
+        "responseMode": "lastNode",
+        "options": {},
+        "httpMethod": "POST",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "3b4c5d6e-7f8a-9b0c-1d2e-3f4a5b6c7d8e",
+      "name": "جلب بيانات العميل والطلب",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "id",
+              "rightValue": "={{ $json.body.data?.order_id || $json.body.data?.id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "4c5d6e7f-8a9b-0c1d-2e3f-4a5b6c7d8e9f",
+      "name": "جلب العميل المرتبط",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 550],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "id",
+              "rightValue": "={{ $json.customer_id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "5d6e7f8a-9b0c-1d2e-3f4a-5b6c7d8e9f0a",
+      "name": "تجهيز بيانات الإرسال",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const order = $input.all()[0].json;\nconst customer = $input.all()[1].json;\n\nconst customerName = customer.name || 'عميلنا العزيز';\nconst orderNumber = order.order_number || '';\n\n// قائمة المنتجات\nconst itemsList = order.items.map(item =>\n  `- ${item.name} (×${item.quantity}) = ${(item.price * item.quantity).toFixed(2)} ريال`\n).join('\\n');\n\n// رسالة التأكيد\nconst message = `السلام عليكم {{customer_name}} 👋\\n\\n` +\n  `تم استلام طلبك رقم {{order_number}} بنجاح ✅\\n\\n` +\n  `📋 **تفاصيل الطلب:**\\n{{order_items}}\\n\\n` +\n  `💰 **المجموع:** {{order_total}} ريال\\n\\n` +\n  `سنقوم بتحديثك بأي مستجدات. شكراً لتسوقك معنا! 🙏`;\n\n// استبدال المتغيرات\nconst finalMessage = message\n  .replace('{{customer_name}}', customerName)\n  .replace('{{order_number}}', orderNumber)\n  .replace('{{order_items}}', itemsList)\n  .replace('{{order_total}}', order.total.toFixed(2));\n\nreturn {\n  to: customer.phone,\n  message: finalMessage,\n  store_id: order.store_id,\n  order_id: order.id,\n  customer_id: customer.id,\n  customer_name: customerName,\n  order_number: orderNumber,\n  store_name: ''  // سيتم إضافته من المتجر\n};"
+      }
+    },
+    {
+      "id": "6e7f8a9b-0c1d-2e3f-4a5b-6c7d8e9f0a1b",
+      "name": "إرسال عبر API التاجر",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [750, 300],
+      "parameters": {
+        "url": "={{ $env.APP_URL }}/api/whatsapp/send",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "to", "value": "={{ $json.to }}" },
+            { "name": "message", "value": "={{ $json.message }}" },
+            { "name": "store_id", "value": "={{ $json.store_id }}" },
+            { "name": "order_id", "value": "={{ $json.order_id }}" },
+            { "name": "customer_id", "value": "={{ $json.customer_id }}" },
+            { "name": "customer_name", "value": "={{ $json.customer_name }}" },
+            { "name": "store_name", "value": "={{ $json.store_name }}" }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "allowUnauthorizedCerts": false
+        },
+        "method": "POST",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7f8a9b0c-1d2e-3f4a-5b6c-7d8e9f0a1b2c",
+      "name": "تسجيل في قاعدة البيانات",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "create",
+        "tableId": "whatsapp_messages",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            {
+              "fieldName": "store_id",
+              "fieldValue": "={{ $json.store_id }}"
+            },
+            {
+              "fieldName": "order_id",
+              "fieldValue": "={{ $json.order_id }}"
+            },
+            {
+              "fieldName": "customer_id",
+              "fieldValue": "={{ $json.customer_id }}"
+            },
+            {
+              "fieldName": "direction",
+              "fieldValue": "outbound"
+            },
+            {
+              "fieldName": "message_type",
+              "fieldValue": "text"
+            },
+            {
+              "fieldName": "content",
+              "fieldValue": "={{ $json.message }}"
+            },
+            {
+              "fieldName": "status",
+              "fieldValue": "sent"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "استقبال الطلب": {
+      "main": [[ { "node": "جلب بيانات العميل والطلب", "type": "main", "index": 0 } ]]
+    },
+    "جلب بيانات العميل والطلب": {
+      "main": [[ { "node": "جلب العميل المرتبط", "type": "main", "index": 0 } ]]
+    },
+    "جلب العميل المرتبط": {
+      "main": [[ { "node": "تجهيز بيانات الإرسال", "type": "main", "index": 0 } ]]
+    },
+    "تجهيز بيانات الإرسال": {
+      "main": [[ { "node": "إرسال عبر API التاجر", "type": "main", "index": 0 } ]]
+    },
+    "إرسال عبر API التاجر": {
+      "main": [[ { "node": "تسجيل في قاعدة البيانات", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["whatsapp", "orders", "multi-tenant"],
+  "active": false,
+  "versionId": "2.0.0"
+}

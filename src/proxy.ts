@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-const publicPaths = ["/", "/store", "/pricing", "/login", "/auth/callback"]
+const publicPaths = ["/", "/store", "/pricing", "/login", "/auth/callback", "/api/webhooks", "/api/n8n/callback", "/api/whatsapp/verify"]
 const adminPaths = ["/admin"]
 
 export async function proxy(request: NextRequest) {
