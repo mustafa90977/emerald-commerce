@@ -10,7 +10,7 @@ const adminPaths = ["/admin"]
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (publicPaths.some((p) => pathname === p || pathname.startsWith(p))) {
+  if (pathname === "/" || publicPaths.filter(p => p !== "/").some(p => pathname === p || pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
