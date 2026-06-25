@@ -29,20 +29,29 @@ export default function LoginPage() {
       return
     }
 
-    const { error: authError } = isSignup
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password })
+    if (isSignup) {
+      const res = await fetch("/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, fullName: email.split("@")[0] }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "فشل إنشاء الحساب")
+        setLoading(false)
+        return
+      }
+      setError("تم إنشاء الحساب! تحقق من بريدك الإلكتروني للتفعيل.")
+      setLoading(false)
+      return
+    }
+
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
       setError(authError.message === "Invalid login credentials"
         ? "بيانات الدخول غير صحيحة"
         : authError.message)
-      setLoading(false)
-      return
-    }
-
-    if (isSignup) {
-      setError("تم إنشاء الحساب! تحقق من بريدك الإلكتروني للتفعيل.")
       setLoading(false)
       return
     }
