@@ -7,10 +7,18 @@ const publicPaths = [
 ]
 const adminPaths = ["/admin"]
 
+function noCache(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+  response.headers.set("Pragma", "no-cache")
+  response.headers.set("Expires", "0")
+  return response
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname === "/" || publicPaths.filter(p => p !== "/").some(p => pathname === p || pathname.startsWith(p))) {
+  const isPublic = pathname === "/" || publicPaths.filter(p => p !== "/").some(p => pathname === p || pathname.startsWith(p))
+  if (isPublic) {
     return NextResponse.next()
   }
 
@@ -60,7 +68,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return noCache(NextResponse.next())
 }
 
 export const config = {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { ROUTES } from "@/lib/constants"
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -71,11 +71,15 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface to-surface-container/50 px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-outline-variant/50 bg-white p-8 shadow-lg">
-          <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <span className="text-xl font-bold text-white">E</span>
-            </div>
+          <div className="rounded-2xl border border-outline-variant/50 bg-white p-8 shadow-lg">
+            <Link href="/" className="mb-4 flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary transition-colors">
+              <ArrowRight className="h-4 w-4" />
+              العودة للرئيسية
+            </Link>
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+                <span className="text-xl font-bold text-white">E</span>
+              </div>
             <h1 className="mt-4 text-2xl font-bold text-on-surface">
               {isSignup ? "إنشاء حساب جديد" : "تسجيل الدخول"}
             </h1>
