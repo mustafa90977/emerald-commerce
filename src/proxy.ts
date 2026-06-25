@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 const publicPaths = [
-  "/", "/store", "/pricing", "/login", "/auth/callback",
-  "/api/webhooks", "/api/n8n/callback", "/api/whatsapp/verify",
+  "/", "/store", "/pricing", "/login", "/auth/callback", "/auth/signup", "/auth/logout",
+  "/api/auth", "/api/webhooks", "/api/n8n/callback", "/api/whatsapp/verify",
   "/api/webhooks/paymob",
 ]
 const adminPaths = ["/admin"]
