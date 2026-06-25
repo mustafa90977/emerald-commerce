@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Search, Filter, ChevronDown, Eye, Loader2 } from "lucide-react"
+import { Search, Filter, ChevronDown, Eye, Loader2, Percent, CheckCircle, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/lib/types"
 
@@ -31,6 +31,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all")
+  const [depositFilter, setDepositFilter] = useState<"all" | "pending" | "paid">("all")
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const fetchOrders = useCallback(async () => {
@@ -45,6 +46,11 @@ export default function OrdersPage() {
     if (statusFilter !== "all") {
       query = query.eq("status", statusFilter)
     }
+    if (depositFilter === "pending") {
+      query = query.eq("deposit_paid", false).gt("deposit_amount", 0)
+    } else if (depositFilter === "paid") {
+      query = query.eq("deposit_paid", true)
+    }
     if (search) {
       query = query.or(`order_number.ilike.%${search}%,customer.name.ilike.%${search}%`)
     }
@@ -52,7 +58,7 @@ export default function OrdersPage() {
     const { data } = await query
     setOrders((data as unknown as Order[]) ?? [])
     setLoading(false)
-  }, [search, statusFilter])
+  }, [search, statusFilter, depositFilter])
 
   useEffect(() => {
     fetchOrders()
@@ -102,6 +108,19 @@ export default function OrdersPage() {
           </select>
           <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
         </div>
+
+        <div className="relative">
+          <select
+            value={depositFilter}
+            onChange={(e) => setDepositFilter(e.target.value as "all" | "pending" | "paid")}
+            className="appearance-none rounded-xl border border-outline-variant/50 bg-white py-3 pr-4 pl-10 text-sm text-on-surface outline-none transition-colors focus:border-primary"
+          >
+            <option value="all">الدفع: الكل</option>
+            <option value="pending">بانتظار الدفعة المقدمة</option>
+            <option value="paid">تم الدفع المقدم ✅</option>
+          </select>
+          <Percent className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+        </div>
       </div>
 
       {loading ? (
@@ -123,6 +142,7 @@ export default function OrdersPage() {
                   <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">العميل</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الهاتف</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المجموع</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الديبوزت</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الحالة</th>
                   <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">التاريخ</th>
                   <th className="px-6 py-4 text-center text-sm font-medium text-on-surface-variant">إجراءات</th>
@@ -150,6 +170,24 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-on-surface">
                       {order.total.toLocaleString("ar-SA")} ريال
+                    </td>
+                    <td className="px-6 py-4">
+                      {Number(order.deposit_percentage) > 0 ? (
+                        <span className={cn(
+                          "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium",
+                          order.deposit_paid
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-yellow-50 text-yellow-700"
+                        )}>
+                          {order.deposit_paid
+                            ? <CheckCircle className="h-3 w-3" />
+                            : <Clock className="h-3 w-3" />
+                          }
+                          {order.deposit_percentage}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-on-surface-variant">---</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="relative">
@@ -224,9 +262,20 @@ export default function OrdersPage() {
                       {new Date(order.created_at).toLocaleDateString("ar-SA")}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-on-surface">
-                    {order.total.toLocaleString("ar-SA")} ريال
-                  </p>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-on-surface">
+                      {order.total.toLocaleString("ar-SA")} ريال
+                    </p>
+                    {Number(order.deposit_percentage) > 0 && (
+                      <p className={cn(
+                        "text-xs mt-1",
+                        order.deposit_paid ? "text-emerald-600" : "text-yellow-600"
+                      )}>
+                        ديبوزت {order.deposit_percentage}%
+                        {order.deposit_paid ? " ✅" : ""}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

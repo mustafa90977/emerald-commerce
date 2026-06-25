@@ -45,6 +45,42 @@ export const ORDER_CONFIRMATION_MESSAGE = `السلام عليكم {{customer_na
 
 سنقوم بتحديثك بأي مستجدات. شكراً لتسوقك معنا! 🙏`
 
+export const ORDER_CONFIRMATION_WITH_DEPOSIT = `السلام عليكم {{customer_name}} 👋
+
+تم استلام طلبك رقم {{order_number}} ✅
+
+📋 تفاصيل الطلب:
+{{order_items}}
+
+💰 الإجمالي: {{order_total}} ريال
+💳 الدفعة المقدمة ({{deposit_percentage}}%): {{deposit_amount}} ريال
+📋 المتبقي: {{remaining_amount}} ريال
+
+لطفاً، قم بدفع الدفعة المقدمة عبر الرابط التالي:
+{{payment_link}}
+
+بعد تأكيد الدفع، سيتم تجهيز طلبك وشحنه. شكراً لتسوقك معنا! 🙏`
+
+export const DEPOSIT_RECEIVED_MESSAGE = `السلام عليكم {{customer_name}} 👋
+
+تم استلام الدفعة المقدمة لطلبك رقم {{order_number}} ✅
+
+💰 المبلغ المستلم: {{deposit_amount}} ريال
+📋 المتبقي: {{remaining_amount}} ريال (سيتم تحصيله عند الاستلام)
+
+سيتم تجهيز طلبك وشحنه قريباً. سنقوم بتحديثك بأي مستجدات 🚚
+
+شكراً لثقتك بنا! 💚`
+
+export const DEPOSIT_REMINDER_MESSAGE = `السلام عليكم {{customer_name}} 👋
+
+نود تذكيرك بدفع الدفعة المقدمة لطلبك رقم {{order_number}}
+
+💳 المطلوب: {{deposit_amount}} ريال
+🔗 رابط الدفع: {{payment_link}}
+
+يرجى إتمام الدفع ليتم تجهيز طلبك. شكراً! 🙏`
+
 export const ORDER_SHIPPED_MESSAGE = `السلام عليكم {{customer_name}} 👋
 
 تم شحن طلبك رقم {{order_number}} 🚚

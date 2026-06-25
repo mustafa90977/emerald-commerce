@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { ArrowRight, Package, Truck, CheckCircle, XCircle, Clock, Loader2, MessageCircle } from "lucide-react"
+import { ArrowRight, Package, Truck, CheckCircle, XCircle, Clock, Loader2, MessageCircle, Percent, Copy, ExternalLink, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Order, OrderStatus } from "@/lib/types"
 
@@ -23,6 +23,16 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
+  // Deposit state
+  const [depositPct, setDepositPct] = useState(0)
+  const [depositEnabled, setDepositEnabled] = useState(false)
+  const [generatingLink, setGeneratingLink] = useState(false)
+  const [markingDeposit, setMarkingDeposit] = useState(false)
+  const [paymentLink, setPaymentLink] = useState("")
+  const [depositMsg, setDepositMsg] = useState("")
+  const [depositMsgType, setDepositMsgType] = useState<"success" | "error" | null>(null)
+  const [copied, setCopied] = useState(false)
+
   useEffect(() => {
     const supabase = createClient()
     if (!supabase) return
@@ -33,7 +43,12 @@ export default function OrderDetailPage() {
       .eq("id", id)
       .single()
       .then(({ data }) => {
-        setOrder(data as unknown as Order)
+        const o = data as unknown as Order
+        setOrder(o)
+        if (o) {
+          setDepositPct(o.deposit_percentage || 0)
+          setDepositEnabled((o.deposit_percentage || 0) > 0)
+        }
         setLoading(false)
       })
   }, [id])
@@ -46,6 +61,119 @@ export default function OrderDetailPage() {
     await supabase.from("orders").update({ status: newStatus }).eq("id", id)
     setOrder({ ...order, status: newStatus })
     setUpdating(false)
+  }
+
+  async function handleSaveDepositPct() {
+    const supabase = createClient()
+    if (!supabase || !order) return
+
+    const pct = depositEnabled ? depositPct : 0
+    const total = Number(order.total)
+    const depositAmount = Math.round((total * pct) / 100 * 100) / 100
+    const remaining = Math.round((total - depositAmount) * 100) / 100
+
+    await supabase.from("orders").update({
+      deposit_percentage: pct,
+      deposit_amount: depositAmount,
+      remaining_amount: remaining,
+    }).eq("id", id)
+
+    setOrder({ ...order, deposit_percentage: pct, deposit_amount: depositAmount, remaining_amount: remaining })
+    setDepositMsgType("success")
+    setDepositMsg("تم حفظ النسبة ✅")
+    setTimeout(() => { setDepositMsg(""); setDepositMsgType(null) }, 2000)
+  }
+
+  async function handleGenerateLink() {
+    if (!order) return
+    setGeneratingLink(true)
+    setDepositMsg("")
+    setDepositMsgType(null)
+
+    try {
+      const total = Number(order.total)
+      const pct = depositEnabled ? depositPct : 0
+      const depositAmount = Math.round((total * pct) / 100 * 100) / 100
+
+      if (depositAmount <= 0) {
+        setDepositMsg("الدفعة المقدمة يجب أن تكون أكبر من 0")
+        setDepositMsgType("error")
+        setGeneratingLink(false)
+        return
+      }
+
+      const customer = (order as unknown as Record<string, unknown>).customer as Record<string, string> | undefined
+
+      const res = await fetch("/api/payments/paymob/create-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: order.id,
+          amount: depositAmount,
+          customer_name: customer?.name || "",
+          customer_email: customer?.email || "",
+          customer_phone: customer?.phone || "",
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setDepositMsg(data.error || "فشل إنشاء رابط الدفع")
+        setDepositMsgType("error")
+      } else {
+        setPaymentLink(data.payment_link_url)
+        setDepositMsg("تم إنشاء رابط الدفع بنجاح ✅")
+        setDepositMsgType("success")
+      }
+    } catch {
+      setDepositMsg("فشل الاتصال بالخادم")
+      setDepositMsgType("error")
+    } finally {
+      setGeneratingLink(false)
+    }
+  }
+
+  async function handleMarkDeposit() {
+    if (!order) return
+    setMarkingDeposit(true)
+
+    try {
+      const res = await fetch("/api/payments/mark-deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: order.id, deposit_percentage: depositPct }),
+      })
+
+      if (res.ok) {
+        setOrder({
+          ...order,
+          deposit_paid: true,
+          deposit_paid_at: new Date().toISOString(),
+          deposit_percentage: depositPct,
+        })
+        setDepositMsg("تم تأكيد استلام الدفعة المقدمة ✅")
+        setDepositMsgType("success")
+      } else {
+        const data = await res.json()
+        setDepositMsg(data.error || "فشل تأكيد الدفعة")
+        setDepositMsgType("error")
+      }
+    } catch {
+      setDepositMsg("فشل الاتصال بالخادم")
+      setDepositMsgType("error")
+    } finally {
+      setMarkingDeposit(false)
+    }
+  }
+
+  async function handleCopyLink() {
+    if (!paymentLink) return
+    try {
+      await navigator.clipboard.writeText(paymentLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { }
   }
 
   if (loading) {
@@ -72,6 +200,9 @@ export default function OrderDetailPage() {
   const StatusIcon = statusConfig[order.status].icon
   const customer = (order as unknown as Record<string, unknown>).customer as Record<string, string> | undefined
   const items = (order.items ?? []) as Array<{ name: string; quantity: number; price: number; image?: string }>
+  const total = Number(order.total)
+  const currentDepositAmount = order.deposit_amount || Math.round((total * depositPct) / 100 * 100) / 100
+  const remaining = order.remaining_amount || Math.round((total - currentDepositAmount) * 100) / 100
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -180,6 +311,137 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
+          {/* Deposit section */}
+          <div className="rounded-2xl border border-outline-variant/50 bg-white p-6">
+            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <Percent className="h-4 w-4 text-primary" />
+              الدفعة المقدمة (الديبوزت)
+            </h3>
+
+            <div className="space-y-4">
+              <label className="flex items-center justify-between">
+                <span className="text-sm text-on-surface">طلب دفعة مقدمة</span>
+                <input
+                  type="checkbox"
+                  checked={depositEnabled}
+                  onChange={(e) => {
+                    setDepositEnabled(e.target.checked)
+                    if (!e.target.checked) setPaymentLink("")
+                  }}
+                  className="h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary"
+                />
+              </label>
+
+              {depositEnabled && (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-xs text-on-surface-variant">النسبة (%)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={depositPct}
+                        onChange={(e) => setDepositPct(Number(e.target.value))}
+                        className="w-20 rounded-lg border border-outline-variant/50 px-3 py-1.5 text-sm outline-none focus:border-primary"
+                      />
+                      <span className="text-xs text-on-surface-variant">%</span>
+                      <button
+                        onClick={handleSaveDepositPct}
+                        className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
+                      >
+                        حفظ
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-surface-container/30 p-3 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-on-surface-variant">إجمالي الطلب</span>
+                      <span className="font-medium">{total.toLocaleString("ar-SA")} ريال</span>
+                    </div>
+                    <div className="flex justify-between text-primary">
+                      <span>الدفعة المقدمة ({depositPct}%)</span>
+                      <span className="font-bold">{currentDepositAmount.toLocaleString("ar-SA")} ريال</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-on-surface-variant">المتبقي</span>
+                      <span className="font-medium">{remaining.toLocaleString("ar-SA")} ريال</span>
+                    </div>
+                  </div>
+
+                  {/* Payment link */}
+                  {!order.deposit_paid && (
+                    <button
+                      onClick={handleGenerateLink}
+                      disabled={generatingLink || currentDepositAmount <= 0}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {generatingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+                      {generatingLink ? "جاري إنشاء الرابط..." : "🔄 توليد رابط دفع (Paymob)"}
+                    </button>
+                  )}
+
+                  {paymentLink && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container/20 p-2">
+                        <input
+                          readOnly
+                          value={paymentLink}
+                          className="flex-1 bg-transparent text-xs font-mono outline-none"
+                        />
+                        <button onClick={handleCopyLink} className="shrink-0 rounded-lg p-1.5 hover:bg-surface-container">
+                          {copied ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-on-surface-variant" />}
+                        </button>
+                        <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg p-1.5 hover:bg-surface-container">
+                          <ExternalLink className="h-4 w-4 text-primary" />
+                        </a>
+                      </div>
+                      <p className="text-xs text-on-surface-variant">انسخ الرابط وأرسله للعميل عبر واتساب</p>
+                    </div>
+                  )}
+
+                  {/* Manual mark deposit as paid */}
+                  {!order.deposit_paid && (
+                    <button
+                      onClick={handleMarkDeposit}
+                      disabled={markingDeposit || currentDepositAmount <= 0}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+                    >
+                      {markingDeposit ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      تأكيد استلام الدفعة المقدمة (يدوي)
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Deposit status badge */}
+              {depositEnabled && (
+                <div className={cn(
+                  "flex items-center justify-center gap-2 rounded-xl p-3 text-sm font-medium",
+                  order.deposit_paid
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-yellow-50 text-yellow-700"
+                )}>
+                  {order.deposit_paid ? (
+                    <><CheckCircle className="h-5 w-5" /> تم استلام الدفعة المقدمة ✅</>
+                  ) : (
+                    <><Clock className="h-5 w-5" /> في انتظار الدفعة المقدمة</>
+                  )}
+                </div>
+              )}
+
+              {depositMsg && (
+                <div className={cn(
+                  "rounded-xl p-3 text-sm",
+                  depositMsgType === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                )}>
+                  {depositMsg}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-outline-variant/50 bg-white p-6">
             <h3 className="text-sm font-semibold text-on-surface mb-4">ملخص الدفع</h3>
             <div className="space-y-3">
@@ -199,6 +461,18 @@ export default function OrderDetailPage() {
                 <span className="text-on-surface">الإجمالي</span>
                 <span className="text-primary">{order.total.toLocaleString("ar-SA")} ريال</span>
               </div>
+              {order.deposit_paid && Number(order.deposit_amount) > 0 && (
+                <div className="border-t border-outline-variant/50 pt-3 flex justify-between text-sm">
+                  <span className="text-on-surface-variant">المدفوع (ديبوزت)</span>
+                  <span className="font-medium text-emerald-600">{Number(order.deposit_amount).toLocaleString("ar-SA")} ريال ✅</span>
+                </div>
+              )}
+              {Number(order.remaining_amount) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-on-surface-variant">المتبقي</span>
+                  <span className="font-medium text-on-surface">{Number(order.remaining_amount).toLocaleString("ar-SA")} ريال</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -209,12 +483,17 @@ export default function OrderDetailPage() {
                 "rounded-lg px-3 py-1 text-xs font-medium",
                 order.payment_status === "paid"
                   ? "bg-emerald-50 text-emerald-700"
+                  : order.payment_status === "partial"
+                  ? "bg-blue-50 text-blue-700"
                   : order.payment_status === "failed"
                   ? "bg-red-50 text-red-700"
                   : "bg-yellow-50 text-yellow-700"
               )}
             >
-              {order.payment_status === "paid" ? "مدفوع" : order.payment_status === "failed" ? "فشل" : "قيد الانتظار"}
+              {order.payment_status === "paid" ? "مدفوع بالكامل"
+                : order.payment_status === "partial" ? "مدفوع جزئياً (ديبوزت)"
+                : order.payment_status === "failed" ? "فشل"
+                : "قيد الانتظار"}
             </span>
             {order.notes && (
               <div className="mt-4">

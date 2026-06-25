@@ -27,6 +27,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ignored: true })
     }
 
+    // Check for deposit_paid change
+    if (table === "orders" && type === "UPDATE" && record.deposit_paid && !old_record?.deposit_paid) {
+      const depositEvent = "deposit.paid"
+      const depositPayload = buildN8nPayload(
+        depositEvent as any,
+        record.store_id,
+        { record, old_record },
+        record.store_name
+      )
+      triggerN8nWorkflow("emerald-deposit-received", depositPayload)
+    }
+
     // Determine which n8n path to call
     let n8nPath: string | undefined
     if (event === "order.created") {

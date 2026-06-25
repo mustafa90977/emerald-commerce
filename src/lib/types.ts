@@ -41,7 +41,7 @@ export interface Product {
 }
 
 export type OrderStatus = "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled"
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
+export type PaymentStatus = "pending" | "partial" | "paid" | "failed" | "refunded"
 
 export interface OrderItem {
   product_id: string
@@ -64,6 +64,11 @@ export interface Order {
   status: OrderStatus
   payment_status: PaymentStatus
   notes: string
+  deposit_percentage: number
+  deposit_amount: number
+  deposit_paid: boolean
+  deposit_paid_at: string | null
+  remaining_amount: number
   created_at: string
   updated_at: string
   customer?: Customer
@@ -192,6 +197,7 @@ export type N8nEvent =
   | "support_ticket.created"
   | "whatsapp.message_received"
   | "whatsapp.message_status"
+  | "deposit.paid"
 
 export interface N8nWebhook {
   id: string
@@ -222,4 +228,33 @@ export interface N8nWebhookPayload {
   store_name?: string
   timestamp: string
   data: Record<string, unknown>
+}
+
+// ====== Payment Gateway & Deposit Types ======
+
+export type PaymentProvider = "paymob" | "stripe" | "fawry"
+
+export interface PaymentGateway {
+  id: string
+  store_id: string
+  provider: PaymentProvider
+  is_active: boolean
+  settings: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface PaymentTransaction {
+  id: string
+  store_id: string
+  order_id?: string
+  provider: string
+  transaction_id?: string
+  intention_id?: string
+  amount: number
+  currency: string
+  status: string
+  type: "deposit" | "full" | "refund"
+  provider_response?: Record<string, unknown>
+  created_at: string
 }

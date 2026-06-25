@@ -56,6 +56,7 @@ export const N8N_EVENTS = {
   SUPPORT_TICKET_CREATED: "support_ticket.created",
   WHATSAPP_MESSAGE_RECEIVED: "whatsapp.message_received",
   WHATSAPP_MESSAGE_STATUS: "whatsapp.message_status",
+  DEPOSIT_PAID: "deposit.paid",
 } as const
 
 export const N8N_WEBHOOK_PATHS = {
@@ -70,6 +71,18 @@ export const WHATSAPP_ROUTES = {
   REGISTER_WEBHOOK: "/api/whatsapp/register-webhook",
 } as const
 
+export const PAYMENT_ROUTES = {
+  CREATE_LINK: "/api/payments/paymob/create-link",
+  WEBHOOK: "/api/webhooks/paymob",
+  MARK_DEPOSIT: "/api/payments/mark-deposit",
+} as const
+
+export const PAYMENT_PROVIDERS = [
+  { id: "paymob", name: "Paymob", regions: ["EG", "SA", "AE", "OM", "PK"] },
+  { id: "stripe", name: "Stripe", regions: ["US", "EU"] },
+  { id: "fawry", name: "Fawry", regions: ["EG"] },
+] as const
+
 export const WHATSAPP_MESSAGE_TEMPLATES = {
   WELCOME: {
     name: "welcome_message",
@@ -82,5 +95,17 @@ export const WHATSAPP_MESSAGE_TEMPLATES = {
   ORDER_SHIPPED: {
     name: "order_shipped_message",
     description: "رسالة إشعار الشحن",
+  },
+  ORDER_WITH_DEPOSIT: {
+    name: "order_confirmation_with_deposit",
+    description: "رسالة تأكيد الطلب مع الدفعة المقدمة",
+  },
+  DEPOSIT_RECEIVED: {
+    name: "deposit_received_message",
+    description: "رسالة تأكيد استلام الدفعة المقدمة",
+  },
+  DEPOSIT_REMINDER: {
+    name: "deposit_reminder_message",
+    description: "رسالة تذكير بدفع الدفعة المقدمة",
   },
 } as const

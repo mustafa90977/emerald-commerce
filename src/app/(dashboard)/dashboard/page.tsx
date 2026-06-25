@@ -25,15 +25,18 @@ async function getStats() {
 
   const storeId = profile.store_id
 
-  const [{ count: totalOrders }, { data: totalRevenue }, { count: totalCustomers }, { count: totalProducts }] =
+  const [{ count: totalOrders }, { data: fullyPaid }, { data: depositsPaid }, { count: totalCustomers }, { count: totalProducts }] =
     await Promise.all([
       supabase.from("orders").select("*", { count: "exact", head: true }).eq("store_id", storeId),
       supabase.from("orders").select("total").eq("store_id", storeId).eq("payment_status", "paid"),
+      supabase.from("orders").select("deposit_amount").eq("store_id", storeId).eq("deposit_paid", true).neq("payment_status", "paid"),
       supabase.from("customers").select("*", { count: "exact", head: true }).eq("store_id", storeId),
       supabase.from("products").select("*", { count: "exact", head: true }).eq("store_id", storeId).eq("is_active", true),
     ])
 
-  const revenue = totalRevenue?.reduce((sum, o) => sum + Number(o.total), 0) ?? 0
+  const fullRevenue = fullyPaid?.reduce((sum, o) => sum + Number(o.total), 0) ?? 0
+  const depositRevenue = depositsPaid?.reduce((sum, o) => sum + Number(o.deposit_amount), 0) ?? 0
+  const revenue = fullRevenue + depositRevenue
 
   return {
     totalOrders: totalOrders ?? 0,

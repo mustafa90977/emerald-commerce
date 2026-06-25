@@ -1,0 +1,171 @@
+{
+  "name": "إشعار استلام الدفعة المقدمة",
+  "nodes": [
+    {
+      "id": "dep-webhook-001",
+      "name": "استقبال إشعار الدفعة",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 300],
+      "parameters": {
+        "path": "emerald-deposit-received",
+        "responseMode": "lastNode",
+        "options": {},
+        "httpMethod": "POST",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "dep-supabase-001",
+      "name": "جلب بيانات الطلب",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "orders",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "id",
+              "rightValue": "={{ $json.body.data?.order_id || $json.body.data?.id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "dep-supabase-002",
+      "name": "جلب العميل",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 550],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "leftValue": "id",
+              "rightValue": "={{ $json.customer_id }}",
+              "operator": "equal"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    },
+    {
+      "id": "dep-code-001",
+      "name": "تجهيز رسالة الدفعة",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "parameters": {
+        "language": "javascript",
+        "code": "const order = $input.all()[0].json;\nconst customer = $input.all()[1].json;\n\nconst customerName = customer.name || 'عميلنا العزيز';\nconst depositAmount = Number(order.deposit_amount || order.total * (order.deposit_percentage || 0) / 100).toFixed(2);\nconst remainingAmount = Number(order.remaining_amount || order.total - depositAmount).toFixed(2);\n\nconst message = `السلام عليكم {{customer_name}} 👋\\n\\n` +\n  `تم استلام الدفعة المقدمة لطلبك رقم {{order_number}} ✅\\n\\n` +\n  `💰 **المبلغ المستلم:** {{deposit_amount}} ريال\\n` +\n  `📋 **المتبقي:** {{remaining_amount}} ريال\\n\\n` +\n  `سيتم تجهيز طلبك وشحنه قريباً. سنقوم بتحديثك بأي مستجدات 🚚\\n\\n` +\n  `شكراً لثقتك بنا! 💚`;\n\nconst finalMessage = message\n  .replace('{{customer_name}}', customerName)\n  .replace('{{order_number}}', order.order_number || '')\n  .replace('{{deposit_amount}}', depositAmount)\n  .replace('{{remaining_amount}}', remainingAmount);\n\nreturn {\n  to: customer.phone,\n  message: finalMessage,\n  store_id: order.store_id,\n  order_id: order.id,\n  customer_id: customer.id,\n  customer_name: customerName,\n  order_number: order.order_number,\n  deposit_amount: depositAmount,\n  remaining_amount: remainingAmount\n};"
+      }
+    },
+    {
+      "id": "dep-http-001",
+      "name": "إرسال عبر API التاجر",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [750, 300],
+      "parameters": {
+        "url": "={{ $env.APP_URL }}/api/whatsapp/send",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "to", "value": "={{ $json.to }}" },
+            { "name": "message", "value": "={{ $json.message }}" },
+            { "name": "store_id", "value": "={{ $json.store_id }}" },
+            { "name": "order_id", "value": "={{ $json.order_id }}" },
+            { "name": "customer_id", "value": "={{ $json.customer_id }}" },
+            { "name": "customer_name", "value": "={{ $json.customer_name }}" }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "allowUnauthorizedCerts": false
+        },
+        "method": "POST",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dep-supabase-003",
+      "name": "تسجيل في قاعدة البيانات",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1000, 300],
+      "parameters": {
+        "operation": "create",
+        "tableId": "whatsapp_messages",
+        "dataToSend": "defineBelow",
+        "fieldsToSend": {
+          "values": [
+            { "fieldName": "store_id", "fieldValue": "={{ $json.store_id }}" },
+            { "fieldName": "order_id", "fieldValue": "={{ $json.order_id }}" },
+            { "fieldName": "customer_id", "fieldValue": "={{ $json.customer_id }}" },
+            { "fieldName": "direction", "fieldValue": "outbound" },
+            { "fieldName": "message_type", "fieldValue": "text" },
+            { "fieldName": "content", "fieldValue": "={{ $json.message }}" },
+            { "fieldName": "status", "fieldValue": "sent" }
+          ]
+        }
+      },
+      "credentials": {
+        "supabaseApi": {
+          "id": "{{SUPABASE_CREDENTIALS_ID}}",
+          "name": "Supabase"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "استقبال إشعار الدفعة": {
+      "main": [[ { "node": "جلب بيانات الطلب", "type": "main", "index": 0 } ]]
+    },
+    "جلب بيانات الطلب": {
+      "main": [[ { "node": "جلب العميل", "type": "main", "index": 0 } ]]
+    },
+    "جلب العميل": {
+      "main": [[ { "node": "تجهيز رسالة الدفعة", "type": "main", "index": 0 } ]]
+    },
+    "تجهيز رسالة الدفعة": {
+      "main": [[ { "node": "إرسال عبر API التاجر", "type": "main", "index": 0 } ]]
+    },
+    "إرسال عبر API التاجر": {
+      "main": [[ { "node": "تسجيل في قاعدة البيانات", "type": "main", "index": 0 } ]]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "tags": ["whatsapp", "deposit", "payments"],
+  "active": false,
+  "versionId": "1.0.0"
+}
