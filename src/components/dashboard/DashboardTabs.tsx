@@ -62,7 +62,7 @@ export function DashboardTabs() {
               className={cn("flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
                 activeTab === tab.id
                   ? "bg-primary text-white shadow-sm"
-                  : "bg-white text-on-surface-variant border border-outline-variant/50 hover:border-primary/30 hover:text-primary"
+                  : "bg-surface text-on-surface-variant border border-outline-variant/50 hover:border-primary/30 hover:text-primary"
               )}>
               <Icon className="h-4 w-4" />
               {tab.label}
@@ -121,7 +121,7 @@ function OverviewTab({ supabase }: { supabase: ReturnType<typeof createClient> |
         {cards.map((c) => {
           const Icon = c.icon
           return (
-            <div key={c.label} className="rounded-2xl border border-outline-variant/50 bg-white p-5 transition-all hover:shadow-md">
+            <div key={c.label} className="rounded-2xl border border-outline-variant/50 bg-surface p-5 transition-all hover:shadow-md">
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${c.bg}`}>
                 <Icon className={`h-6 w-6 ${c.color}`} />
               </div>
@@ -164,10 +164,10 @@ function OrdersTab({ supabase }: { supabase: ReturnType<typeof createClient> | n
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث برقم الطلب أو اسم العميل..."
-            className="w-full rounded-xl border border-outline-variant/50 bg-white py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
+            className="w-full rounded-xl border border-outline-variant/50 bg-surface py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
         </div>
         <select value={filter} onChange={(e) => setFilter(e.target.value)}
-          className="rounded-xl border border-outline-variant/50 bg-white py-3 px-4 text-sm outline-none focus:border-primary">
+          className="rounded-xl border border-outline-variant/50 bg-surface py-3 px-4 text-sm outline-none focus:border-primary">
           <option value="all">جميع الحالات</option>
           {Object.entries(statusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
@@ -175,7 +175,7 @@ function OrdersTab({ supabase }: { supabase: ReturnType<typeof createClient> | n
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         orders.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا توجد طلبات</p> :
         <>
-          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-surface md:block">
             <table className="w-full">
               <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
                 <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">رقم الطلب</th>
@@ -203,7 +203,7 @@ function OrdersTab({ supabase }: { supabase: ReturnType<typeof createClient> | n
           </div>
           <div className="space-y-3 md:hidden">{orders.map((o) => {
             const cust = (o as unknown as Record<string, { name: string }>).customer
-            return <div key={o.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+            return <div key={o.id} className="rounded-2xl border border-outline-variant/50 bg-surface p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-on-surface" dir="ltr">{o.order_number}</span>
                 <span className={cn("rounded-lg border px-2.5 py-0.5 text-xs font-medium", statusColors[o.status])}>{statusLabels[o.status]}</span>
@@ -256,11 +256,11 @@ function ProductsTab({ supabase }: { supabase: ReturnType<typeof createClient> |
       <div className="mb-4 relative">
         <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث عن منتج..."
-          className="w-full rounded-xl border border-outline-variant/50 bg-white py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
+          className="w-full rounded-xl border border-outline-variant/50 bg-surface py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
       </div>
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-outline-variant/50">
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl border border-outline-variant/50">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">{editP ? "تعديل منتج" : "إضافة منتج"}</h3>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5" /></button>
@@ -283,7 +283,7 @@ function ProductsTab({ supabase }: { supabase: ReturnType<typeof createClient> |
       )}
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         products.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا توجد منتجات</p> :
-        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-surface">
           <table className="w-full">
             <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
               <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المنتج</th>
@@ -330,11 +330,11 @@ function CustomersTab({ supabase }: { supabase: ReturnType<typeof createClient> 
       <div className="mb-4 relative">
         <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-on-surface-variant" />
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث باسم، بريد، أو هاتف..."
-          className="w-full rounded-xl border border-outline-variant/50 bg-white py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
+          className="w-full rounded-xl border border-outline-variant/50 bg-surface py-3 pr-12 pl-4 text-sm outline-none focus:border-primary" />
       </div>
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         customers.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا يوجد عملاء</p> :
-        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-surface">
           <table className="w-full">
             <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
               <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الاسم</th>
@@ -394,16 +394,16 @@ function ReportsTab({ supabase }: { supabase: ReturnType<typeof createClient> | 
         ))}</div>
       </div>
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-outline-variant/50 bg-white p-5 flex items-center gap-3">
+        <div className="rounded-2xl border border-outline-variant/50 bg-surface p-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50"><DollarSign className="h-6 w-6 text-emerald-600" /></div>
           <div><p className="text-sm text-on-surface-variant">إجمالي المبيعات</p><p className="text-2xl font-bold text-on-surface">{totalRev.toLocaleString("ar-SA")} ريال</p></div>
         </div>
-        <div className="rounded-2xl border border-outline-variant/50 bg-white p-5 flex items-center gap-3">
+        <div className="rounded-2xl border border-outline-variant/50 bg-surface p-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50"><ShoppingCart className="h-6 w-6 text-blue-600" /></div>
           <div><p className="text-sm text-on-surface-variant">إجمالي الطلبات</p><p className="text-2xl font-bold text-on-surface">{totalOrd.toLocaleString("ar-SA")}</p></div>
         </div>
       </div>
-      <div className="rounded-2xl border border-outline-variant/50 bg-white p-6">
+      <div className="rounded-2xl border border-outline-variant/50 bg-surface p-6">
         <div className="flex items-center gap-2 mb-4"><TrendingUp className="h-5 w-5 text-primary" /><h3 className="text-sm font-semibold">المبيعات</h3></div>
         {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
           data.length === 0 ? <p className="py-10 text-center text-sm text-on-surface-variant">لا توجد بيانات</p> :
@@ -416,7 +416,7 @@ function ReportsTab({ supabase }: { supabase: ReturnType<typeof createClient> | 
         }
         <div className="mt-4 flex justify-end">
           <button onClick={() => exportCSV(["الشهر", "الطلبات", "الإيرادات"], data.map((d) => [d.month, String(d.orders), String(d.revenue)]), "تقرير_المبيعات.csv")}
-            className="flex items-center gap-2 rounded-xl border bg-white px-5 py-2.5 text-sm font-medium"><Download className="h-4 w-4" />تصدير</button>
+            className="flex items-center gap-2 rounded-xl border bg-surface px-5 py-2.5 text-sm font-medium"><Download className="h-4 w-4" />تصدير</button>
         </div>
       </div>
     </div>
@@ -443,12 +443,12 @@ function SettingsTab() {
           const Icon = t.icon
           return <button key={t.id} onClick={() => setActive(t.id)}
             className={cn("flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
-              active === t.id ? "bg-primary text-white" : "bg-white border border-outline-variant/50 text-on-surface-variant")}>
+              active === t.id ? "bg-primary text-white" : "bg-surface border border-outline-variant/50 text-on-surface-variant")}>
             <Icon className="h-4 w-4" />{t.label}
           </button>
         })}
       </div>
-      <div className="rounded-2xl border border-outline-variant/50 bg-white p-6">
+      <div className="rounded-2xl border border-outline-variant/50 bg-surface p-6">
         {active === "general" && <div className="space-y-4">
           <h3 className="font-bold">معلومات المتجر</h3>
           <div><label className="block text-sm font-medium mb-1">اسم المتجر</label><input defaultValue="متجري" className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-primary" /></div>
@@ -603,7 +603,7 @@ function SubscriptionTab({ supabase }: { supabase: ReturnType<typeof createClien
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((p) => {
             const isCurrent = p.key === plan
-            return <div key={p.key} className={cn("flex flex-col rounded-2xl border bg-white p-5", isCurrent ? "border-primary" : "border-outline-variant/50")}>
+            return <div key={p.key} className={cn("flex flex-col rounded-2xl border bg-surface p-5", isCurrent ? "border-primary" : "border-outline-variant/50")}>
               <h4 className="text-lg font-bold">{p.name}</h4>
               <p className="mt-2">{p.price === 0 ? <span className="text-3xl font-bold">مجاني</span> : <><span className="text-3xl font-bold">{p.price}</span><span className="mr-1 text-sm text-on-surface-variant">ريال/شهر</span></>}</p>
               <ul className="mt-4 flex-1 space-y-2">{p.features.map((f) => <li key={f} className="flex items-center gap-2 text-sm"><Check className="h-4 w-4 text-primary" />{f}</li>)}</ul>

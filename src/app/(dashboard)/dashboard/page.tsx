@@ -69,7 +69,7 @@ export default async function DashboardPage() {
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-outline-variant/50 bg-white p-5 transition-all hover:shadow-md"
+              className="rounded-2xl border border-outline-variant/50 bg-surface p-5 transition-all hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${card.bg}`}>

@@ -17,7 +17,7 @@ const paymentMethods = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-outline-variant/50 bg-white">
+    <footer className="border-t border-outline-variant/50 bg-surface-container">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
@@ -57,7 +57,7 @@ export function Footer() {
               {paymentMethods.map((method) => (
                 <div
                   key={method.name}
-                  className="flex h-8 w-12 items-center justify-center rounded border border-outline-variant/50 bg-white px-2 text-xs text-on-surface-variant"
+                  className="flex h-8 w-12 items-center justify-center rounded border border-outline-variant/50 bg-surface-container px-2 text-xs text-on-surface-variant"
                 >
                   {method.name}
                 </div>

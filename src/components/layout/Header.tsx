@@ -28,7 +28,7 @@ export function Header() {
     <header
       className={cn(
         "sticky top-0 z-50 transition-shadow duration-200",
-        scrolled ? "bg-white/95 shadow-sm backdrop-blur-sm" : "bg-white"
+        scrolled ? "bg-surface-container/95 shadow-sm backdrop-blur-sm" : "bg-surface-container"
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -90,7 +90,7 @@ export function Header() {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-outline-variant/50 bg-white md:hidden">
+        <div className="border-t border-outline-variant/50 bg-surface-container md:hidden">
           <nav className="flex flex-col gap-1 px-4 py-4">
             {NAV_ITEMS.public.map((item) => (
               <Link

@@ -26,7 +26,7 @@ export function AdminSidebar() {
   const router = useRouter()
 
   return (
-    <aside className="fixed right-0 top-0 z-30 hidden h-full w-72 flex-col border-l border-outline-variant/50 bg-white md:flex">
+    <aside className="fixed right-0 top-0 z-30 hidden h-full w-72 flex-col border-l border-outline-variant/50 bg-surface-container md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-outline-variant/50 px-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <span className="text-lg font-bold text-white">E</span>

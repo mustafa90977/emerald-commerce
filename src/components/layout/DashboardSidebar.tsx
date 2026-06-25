@@ -13,7 +13,11 @@ import {
   Settings,
   CreditCard,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
 
 const sidebarItems = [
   { label: "نظرة عامة", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
@@ -28,9 +32,12 @@ const sidebarItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
-    <aside className="fixed right-0 top-0 z-30 hidden h-full w-72 flex-col border-l border-outline-variant/50 bg-white md:flex">
+    <aside className="fixed right-0 top-0 z-30 hidden h-full w-72 flex-col border-l border-outline-variant/50 bg-surface-container md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-outline-variant/50 px-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <span className="text-lg font-bold text-white">E</span>
@@ -64,7 +71,16 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-outline-variant/50 p-3">
+      <div className="border-t border-outline-variant/50 p-3 space-y-1">
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? "الوضع النهاري" : "الوضع الليلي"}
+          </button>
+        )}
         <button
           onClick={() => router.push("/auth/logout")}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"

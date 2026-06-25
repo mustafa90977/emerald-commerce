@@ -24,7 +24,7 @@ export function BottomNav() {
   const items = isAdmin ? adminNavItems : navItems
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-outline-variant/50 bg-white md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-outline-variant/50 bg-surface-container md:hidden">
       <div className="flex items-center justify-around px-2 py-1">
         {items.map((item) => (
           <Link
