@@ -56,10 +56,7 @@ export function StoreHeader({ template, name, logo, description }: { template: T
           </div>
 
           {layout.headerStyle !== "minimal" && layout.headerStyle !== "centered" && (
-            <nav className="flex gap-4 md:gap-6 text-xs md:text-sm" style={{
-              marginTop: layout.headerStyle === "centered" ? "0.5rem" : undefined,
-              justifyContent: layout.headerStyle === "centered" ? "center" : undefined,
-            }}>
+            <nav className="flex gap-4 md:gap-6 text-xs md:text-sm">
               <span style={{ cursor: "pointer", opacity: 0.9, borderBottom: `2px solid ${colors.headerText}`, paddingBottom: "2px" }}>الرئيسية</span>
               <span style={{ cursor: "pointer", opacity: 0.7 }}>المنتجات</span>
               <span style={{ cursor: "pointer", opacity: 0.7 }}>اتصل بنا</span>
