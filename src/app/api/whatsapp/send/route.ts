@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
       })
     } else if (message) {
       const msg = replaceTemplateVariables(message, {
-        store_name: body.store_name || "",
-        customer_name: body.customer_name || "",
+        store_name: (body.store_name as string) || "",
+        customer_name: (body.customer_name as string) || "",
       })
 
       result = await sendTextMessage({
