@@ -9,11 +9,17 @@ export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization") || ""
   const isN8n = N8N_API_KEY && authHeader === `Bearer ${N8N_API_KEY}`
 
+  let body: Record<string, unknown>
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+  }
+
   let storeId: string | null = null
 
   if (isN8n) {
-    const body = await request.json()
-    storeId = body.store_id
+    storeId = body.store_id as string
     if (!storeId) {
       return NextResponse.json({ error: "store_id required" }, { status: 400 })
     }
@@ -35,15 +41,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No store found" }, { status: 404 })
     }
 
-    storeId = body.store_id || profile?.store_id
+    storeId = (body.store_id || profile?.store_id) as string
     if (!storeId) {
       return NextResponse.json({ error: "store_id required" }, { status: 400 })
     }
   }
 
   try {
-    const body = await request.json()
-    const { to, message, template_name, components } = body
+    const { to, message, template_name, components } = body as {
+      to: string
+      message?: string
+      template_name?: string
+      components?: Record<string, unknown>[]
+    }
 
     const supabase = getAdminClient()
 
