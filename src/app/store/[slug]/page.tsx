@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { getAdminClient } from "@/lib/supabase/admin"
 import { getTemplate } from "@/lib/templates"
 import { StoreLayout } from "@/components/storefront/StoreLayout"
 import { StoreHeader } from "@/components/storefront/StoreHeader"
@@ -10,31 +10,35 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+async function getStoreBySlug(slug: string) {
+  const supabase = getAdminClient() as any
+  if (!supabase) return null
+  const { data } = await supabase.from("stores").select("*").eq("slug", slug).single()
+  return data as Record<string, unknown> | null
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
-  if (!supabase) return { title: "المتجر" }
-
-  const { data: store } = await supabase.from("stores").select("name, description").eq("slug", slug).single()
+  const store = await getStoreBySlug(slug)
   if (!store) return { title: "المتجر" }
 
   return {
-    title: store.name,
-    description: store.description || `متجر ${store.name} على Emerald Commerce`,
-    openGraph: { type: "website", locale: "ar_SA", siteName: store.name },
+    title: (store.name as string) || "المتجر",
+    description: (store.description as string) || `متجر ${store.name} على Emerald Commerce`,
+    openGraph: { type: "website", locale: "ar_SA", siteName: (store.name as string) || "المتجر" },
   }
 }
 
 export default async function StorePage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
-  if (!supabase) return notFound()
-
-  const { data: store } = await supabase.from("stores").select("*").eq("slug", slug).single()
+  const store = await getStoreBySlug(slug)
   if (!store) return notFound()
 
-  const templateId = (store.settings as Record<string, unknown>)?.template as string || "emerald"
+  const templateId = ((store.settings as Record<string, unknown>)?.template as string) || "emerald"
   const template = getTemplate(templateId)
+
+  const supabase = getAdminClient() as any
+  if (!supabase) return notFound()
 
   const { data: products } = await supabase
     .from("products")
@@ -45,8 +49,8 @@ export default async function StorePage({ params }: Props) {
 
   return (
     <StoreLayout template={template}>
-      <StoreHeader template={template} name={store.name} logo={store.logo || undefined} description={store.description || undefined} />
-      <ProductGrid products={products ?? []} template={template} />
+      <StoreHeader template={template} name={store.name as string} logo={(store.logo as string) || undefined} description={(store.description as string) || undefined} />
+      <ProductGrid products={(products as Record<string, unknown>[]) ?? []} template={template} />
     </StoreLayout>
   )
 }
