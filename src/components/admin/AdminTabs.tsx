@@ -181,7 +181,8 @@ function MerchantsTab({ supabase }: { supabase: ReturnType<typeof createClient> 
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         merchants.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا يوجد تجار</p> :
         <>
-          <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
             <table className="w-full">
               <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
                 <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">التاجر</th>
@@ -216,6 +217,35 @@ function MerchantsTab({ supabase }: { supabase: ReturnType<typeof createClient> 
                 </tr>
               ))}</tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {merchants.map((m) => (
+              <div key={m.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-on-surface">{m.full_name || "---"}</p>
+                    <p className="text-xs text-on-surface-variant" dir="ltr">{m.email}</p>
+                  </div>
+                  <button onClick={() => toggleMerchant(m.id)} disabled={toggling === m.id}
+                    className={cn("rounded-lg border px-3 py-1 text-xs font-medium shrink-0",
+                      m.store?.is_active
+                        ? "border-red-200 text-red-600 hover:bg-red-50"
+                        : "border-emerald-200 text-emerald-600 hover:bg-emerald-50")}>
+                    {toggling === m.id ? "..." : m.store?.is_active ? "إيقاف" : "تفعيل"}
+                  </button>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-on-surface-variant">{m.store?.name ?? "بدون متجر"}</span>
+                  <span className={cn("flex items-center gap-1 text-xs", m.store?.is_active ? "text-emerald-600" : "text-red-500")}>
+                    {m.store?.is_active ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
+                    {m.store?.is_active ? "نشط" : "موقوف"}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-on-surface-variant">{new Date(m.created_at).toLocaleDateString("ar-SA")}</p>
+              </div>
+            ))}
           </div>
           <Pagination page={page} total={merchants.length} onChange={setPage} />
         </>
@@ -256,7 +286,8 @@ function ProductsTab({ supabase }: { supabase: ReturnType<typeof createClient> |
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         products.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا توجد منتجات</p> :
         <>
-          <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
             <table className="w-full">
               <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
                 <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المنتج</th>
@@ -277,6 +308,35 @@ function ProductsTab({ supabase }: { supabase: ReturnType<typeof createClient> |
                 </tr>
               ))}</tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {products.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-on-surface">{p.name}</p>
+                  <span className={cn("rounded-lg px-2 py-0.5 text-xs", p.is_active ? "bg-emerald-50 text-emerald-700" : "bg-gray-50 text-gray-500")}>
+                    {p.is_active ? "نشط" : "غير نشط"}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-on-surface-variant">{p.store?.name ?? "---"}</div>
+                <div className="mt-2 grid grid-cols-3 gap-4 border-t border-outline-variant/30 pt-2 text-center text-sm">
+                  <div>
+                    <p className="font-medium text-on-surface">{p.price.toLocaleString("ar-SA")} ريال</p>
+                    <p className="text-xs text-on-surface-variant">السعر</p>
+                  </div>
+                  <div>
+                    <p className={cn("font-medium", p.stock > 0 ? "text-on-surface" : "text-red-500")}>{p.stock}</p>
+                    <p className="text-xs text-on-surface-variant">المخزون</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-on-surface truncate">{p.category || "---"}</p>
+                    <p className="text-xs text-on-surface-variant">التصنيف</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <Pagination page={page} total={products.length} onChange={setPage} />
         </>
@@ -327,7 +387,8 @@ function OrdersTab({ supabase }: { supabase: ReturnType<typeof createClient> | n
       {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" /> :
         orders.length === 0 ? <p className="py-20 text-center text-on-surface-variant">لا توجد طلبات</p> :
         <>
-          <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
             <table className="w-full">
               <thead><tr className="border-b border-outline-variant/50 bg-surface-container/50">
                 <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">رقم الطلب</th>
@@ -348,6 +409,30 @@ function OrdersTab({ supabase }: { supabase: ReturnType<typeof createClient> | n
                 </tr>
               ))}</tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {orders.map((o) => (
+              <div key={o.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-on-surface" dir="ltr">{o.order_number}</span>
+                  <span className={cn("rounded-lg px-2 py-0.5 text-xs", orderStatusColors[o.status])}>{orderStatusLabels[o.status]}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-on-surface-variant">{o.store?.name ?? "---"}</p>
+                    <p className="text-xs text-on-surface-variant">{new Date(o.created_at).toLocaleDateString("ar-SA")}</p>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-on-surface">{o.total.toLocaleString("ar-SA")} ريال</p>
+                    <span className={cn("rounded-lg px-2 py-0.5 text-xs", o.payment_status === "paid" ? "bg-emerald-50 text-emerald-700" : "bg-yellow-50 text-yellow-700")}>
+                      {o.payment_status === "paid" ? "مدفوع" : "غير مدفوع"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
           <Pagination page={page} total={orders.length} onChange={setPage} />
         </>

@@ -115,32 +115,59 @@ export default function CustomersPage() {
           <p className="mt-4 text-on-surface-variant">لا يوجد عملاء</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-outline-variant/50 bg-surface-container/50">
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الاسم</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">البريد</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الهاتف</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الطلبات</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">إجمالي الإنفاق</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map((c) => (
-                <tr key={c.id} className="border-b border-outline-variant/30 transition-colors hover:bg-surface-container/30">
-                  <td className="px-6 py-4 text-sm font-medium text-on-surface">{c.name}</td>
-                  <td className="px-6 py-4 text-sm text-on-surface-variant" dir="ltr">{c.email || "---"}</td>
-                  <td className="px-6 py-4 text-sm text-on-surface-variant" dir="ltr">{c.phone || "---"}</td>
-                  <td className="px-6 py-4 text-sm text-on-surface">{c.total_orders}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-on-surface">
-                    {c.total_spent.toLocaleString("ar-SA")} ريال
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-outline-variant/50 bg-surface-container/50">
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الاسم</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">البريد</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الهاتف</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">الطلبات</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">إجمالي الإنفاق</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {customers.map((c) => (
+                  <tr key={c.id} className="border-b border-outline-variant/30 transition-colors hover:bg-surface-container/30">
+                    <td className="px-6 py-4 text-sm font-medium text-on-surface">{c.name}</td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant" dir="ltr">{c.email || "---"}</td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant" dir="ltr">{c.phone || "---"}</td>
+                    <td className="px-6 py-4 text-sm text-on-surface">{c.total_orders}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-on-surface">
+                      {c.total_spent.toLocaleString("ar-SA")} ريال
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {customers.map((c) => (
+              <div key={c.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-on-surface">{c.name}</p>
+                    <p className="text-xs text-on-surface-variant" dir="ltr">{c.email || "---"}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-on-surface">
+                    {c.total_spent.toLocaleString("ar-SA")} ريال
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-4 text-xs text-on-surface-variant">
+                  <span dir="ltr">{c.phone || "---"}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium text-on-surface">{c.total_orders}</span>
+                    طلب
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )

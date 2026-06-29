@@ -15,42 +15,40 @@ export function StoreHeader({ template, name, logo, description }: { template: T
         background: bgGradient || bgColor,
         color: colors.headerText,
         borderBottom: layout.headerStyle === "elegant" ? `2px solid ${colors.primary}` : layout.headerStyle === "split" ? `1px solid ${colors.outline}` : "none",
-        padding: layout.headerStyle === "minimal" ? "1rem 2rem" : layout.headerStyle === "elegant" ? "1.5rem 2rem" : "1.25rem 2rem",
+        padding: layout.headerStyle === "minimal" ? "0.75rem 1rem" : layout.headerStyle === "elegant" ? "1rem 1rem" : "1rem",
       }}
     >
       <div className="mx-auto" style={{ maxWidth: "1200px" }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: layout.headerStyle === "centered" ? "center" : "space-between",
-          flexDirection: layout.headerStyle === "centered" ? "column" : "row",
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between" style={{
           gap: "0.5rem",
           textAlign: layout.headerStyle === "centered" ? "center" : undefined,
+          ...(layout.headerStyle === "centered" ? { alignItems: "center" } : {}),
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div className="flex items-center gap-3">
             {logo && (
               <img src={logo} alt={name}
+                className="shrink-0"
                 style={{
-                  width: layout.headerStyle === "elegant" ? "3.5rem" : "2.5rem",
-                  height: layout.headerStyle === "elegant" ? "3.5rem" : "2.5rem",
+                  width: layout.headerStyle === "elegant" ? "3rem" : "2rem",
+                  height: layout.headerStyle === "elegant" ? "3rem" : "2rem",
                   borderRadius: layout.headerStyle === "minimal" ? "0" : "50%",
                   objectFit: "cover",
                   border: layout.headerStyle === "elegant" ? `2px solid ${colors.primary}` : "none",
                 }}
               />
             )}
-            <div>
-              <h1 style={{
-                fontSize: layout.headerStyle === "dark" || layout.headerStyle === "elegant" ? "1.75rem" : "1.25rem",
+            <div className="min-w-0">
+              <h1 className="truncate" style={{
+                fontSize: layout.headerStyle === "dark" || layout.headerStyle === "elegant" ? "1.25rem" : "1.1rem",
                 fontWeight: 700,
                 letterSpacing: layout.headerStyle === "elegant" ? "0.05em" : "normal",
                 margin: 0,
               }}>{name}</h1>
               {description && (
-                <p style={{
-                  fontSize: "0.875rem",
+                <p className="truncate" style={{
+                  fontSize: "0.75rem",
                   opacity: 0.8,
-                  margin: "0.25rem 0 0 0",
+                  margin: "0.125rem 0 0 0",
                   color: isDark ? "rgba(255,255,255,0.7)" : colors.onSurfaceVariant,
                 }}>{description}</p>
               )}
@@ -58,8 +56,11 @@ export function StoreHeader({ template, name, logo, description }: { template: T
           </div>
 
           {layout.headerStyle !== "minimal" && layout.headerStyle !== "centered" && (
-            <nav style={{ display: "flex", gap: "1.5rem", fontSize: "0.875rem" }}>
-              <span style={{ cursor: "pointer", opacity: 0.9, borderBottom: `2px solid ${colors.headerText}` }}>الرئيسية</span>
+            <nav className="flex gap-4 md:gap-6 text-xs md:text-sm" style={{
+              marginTop: layout.headerStyle === "centered" ? "0.5rem" : undefined,
+              justifyContent: layout.headerStyle === "centered" ? "center" : undefined,
+            }}>
+              <span style={{ cursor: "pointer", opacity: 0.9, borderBottom: `2px solid ${colors.headerText}`, paddingBottom: "2px" }}>الرئيسية</span>
               <span style={{ cursor: "pointer", opacity: 0.7 }}>المنتجات</span>
               <span style={{ cursor: "pointer", opacity: 0.7 }}>اتصل بنا</span>
             </nav>

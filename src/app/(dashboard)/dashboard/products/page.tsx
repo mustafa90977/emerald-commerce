@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Search, Plus, Package, Edit3, Trash2, Loader2, X } from "lucide-react"
+import { Search, Plus, Package, Edit3, Trash2, Loader2, X, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Product {
@@ -157,55 +157,103 @@ export default function ProductsPage() {
           <p className="mt-4 text-on-surface-variant">لا توجد منتجات</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-outline-variant/50 bg-white">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-outline-variant/50 bg-surface-container/50">
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المنتج</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">السعر</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المخزون</th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">التصنيف</th>
-                <th className="px-6 py-4 text-center text-sm font-medium text-on-surface-variant">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.id} className="border-b border-outline-variant/30 transition-colors hover:bg-surface-container/30">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container">
-                        <Package className="h-5 w-5 text-on-surface-variant" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-on-surface">{product.name}</p>
-                        <p className="text-xs text-on-surface-variant">{product.is_active ? "نشط" : "غير نشط"}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-on-surface">{product.price.toLocaleString("ar-SA")} ريال</td>
-                  <td className="px-6 py-4">
-                    <span className={cn("text-sm", product.stock > 0 ? "text-on-surface" : "text-red-500")}>
-                      {product.stock}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-on-surface-variant">{product.category || "---"}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => openEdit(product)}
-                        className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary">
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleDelete(product.id)}
-                        className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-red-500">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-2xl border border-outline-variant/50 bg-white md:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-outline-variant/50 bg-surface-container/50">
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المنتج</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">السعر</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">المخزون</th>
+                  <th className="px-6 py-4 text-right text-sm font-medium text-on-surface-variant">التصنيف</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-on-surface-variant">إجراءات</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b border-outline-variant/30 transition-colors hover:bg-surface-container/30">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container">
+                          <Package className="h-5 w-5 text-on-surface-variant" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-on-surface">{product.name}</p>
+                          <p className="text-xs text-on-surface-variant">{product.is_active ? "نشط" : "غير نشط"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-on-surface">{product.price.toLocaleString("ar-SA")} ريال</td>
+                    <td className="px-6 py-4">
+                      <span className={cn("text-sm", product.stock > 0 ? "text-on-surface" : "text-red-500")}>
+                        {product.stock}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-on-surface-variant">{product.category || "---"}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => openEdit(product)}
+                          className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary">
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleDelete(product.id)}
+                          className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-red-500">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="space-y-3 md:hidden">
+            {products.map((product) => (
+              <div key={product.id} className="rounded-2xl border border-outline-variant/50 bg-white p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-container">
+                      <Package className="h-5 w-5 text-on-surface-variant" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-on-surface">{product.name}</p>
+                      <p className={cn("text-xs", product.is_active ? "text-emerald-600" : "text-on-surface-variant")}>
+                        {product.is_active ? "نشط" : "غير نشط"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => openEdit(product)}
+                      className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary">
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => handleDelete(product.id)}
+                      className="rounded-lg p-2 text-on-surface-variant transition-colors hover:bg-surface-container hover:text-red-500">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-4 border-t border-outline-variant/30 pt-3 text-center text-sm">
+                  <div>
+                    <p className="font-medium text-on-surface">{product.price.toLocaleString("ar-SA")} ريال</p>
+                    <p className="text-xs text-on-surface-variant">السعر</p>
+                  </div>
+                  <div>
+                    <p className={cn("font-medium", product.stock > 0 ? "text-on-surface" : "text-red-500")}>{product.stock}</p>
+                    <p className="text-xs text-on-surface-variant">المخزون</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-on-surface truncate">{product.category || "---"}</p>
+                    <p className="text-xs text-on-surface-variant">التصنيف</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
