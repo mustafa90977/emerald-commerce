@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 
-    const { data: settings } = await admin
+    const db = admin as any
+    const { data: settings } = await db
       .from("whatsapp_settings")
       .select("*")
       .eq("store_id", storeId)
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     if (result) {
       const waMessageId = result?.messages?.[0]?.id
-      await admin
+      await db
         .from("whatsapp_messages")
         .insert({
           store_id: storeId,
