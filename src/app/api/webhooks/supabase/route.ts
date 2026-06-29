@@ -1,64 +1,47 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { triggerN8nWorkflow, buildN8nPayload, N8N_PATHS } from "@/lib/n8n"
+import { sendOrderConfirmation, sendDepositReceived, sendCustomerWelcome } from "@/lib/whatsapp-notification"
+import { getAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
     const { type, table, record, old_record } = body
 
-    // Map Supabase events to n8n events
-    const eventMap: Record<string, Record<string, string>> = {
-      orders: {
-        INSERT: "order.created",
-        UPDATE: "order.updated",
-      },
-      customers: {
-        INSERT: "customer.created",
-        UPDATE: "customer.updated",
-      },
-      products: {
-        INSERT: "product.created",
-      },
-    }
-
-    const event = eventMap[table]?.[type]
-    if (!event || !record?.store_id) {
+    if (!record?.store_id) {
       return NextResponse.json({ ignored: true })
     }
 
-    // Check for deposit_paid change
+    const supabase = getAdminClient()
+
+    if (table === "orders" && type === "INSERT") {
+      const { data: customer } = await supabase!
+        .from("customers")
+        .select("*")
+        .eq("id", record.customer_id)
+        .single()
+
+      if (customer) {
+        sendOrderConfirmation(record.store_id, record, customer)
+      }
+    }
+
     if (table === "orders" && type === "UPDATE" && record.deposit_paid && !old_record?.deposit_paid) {
-      const depositEvent = "deposit.paid"
-      const depositPayload = buildN8nPayload(
-        depositEvent as any,
-        record.store_id,
-        { record, old_record },
-        record.store_name
-      )
-      triggerN8nWorkflow("emerald-deposit-received", depositPayload)
+      const { data: customer } = await supabase!
+        .from("customers")
+        .select("*")
+        .eq("id", record.customer_id)
+        .single()
+
+      if (customer) {
+        sendDepositReceived(record.store_id, record, customer)
+      }
     }
 
-    // Determine which n8n path to call
-    let n8nPath: string | undefined
-    if (event === "order.created") {
-      n8nPath = N8N_PATHS.ORDER_CONFIRMATION
-    } else if (event === "customer.created") {
-      n8nPath = N8N_PATHS.NEW_CUSTOMER
+    if (table === "customers" && type === "INSERT") {
+      sendCustomerWelcome(record.store_id, record)
     }
 
-    const payload = buildN8nPayload(
-      event as any,
-      record.store_id,
-      { record, old_record },
-      record.store_name
-    )
-
-    if (n8nPath) {
-      triggerN8nWorkflow(n8nPath, payload)
-    }
-
-    return NextResponse.json({ received: true, event })
+    return NextResponse.json({ received: true })
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to process webhook", details: String(error) },

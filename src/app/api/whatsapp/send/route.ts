@@ -1,45 +1,52 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { getAdminClient } from "@/lib/supabase/admin"
 import { sendTextMessage, sendTemplateMessage, replaceTemplateVariables } from "@/lib/whatsapp-api"
 
 export async function POST(request: NextRequest) {
-  const supabase = await createServerSupabaseClient()
+  const N8N_API_KEY = process.env.N8N_API_KEY
 
-  const {
-    data: { user },
-  } = await supabase?.auth.getUser() ?? { data: { user: null } }
+  const authHeader = request.headers.get("authorization") || ""
+  const isN8n = N8N_API_KEY && authHeader === `Bearer ${N8N_API_KEY}`
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  let storeId: string | null = null
 
-  // Get user's store_id
-  const { data: profile } = await supabase!
-    .from("profiles")
-    .select("store_id, role")
-    .eq("id", user.id)
-    .single()
+  if (isN8n) {
+    const body = await request.json()
+    storeId = body.store_id
+    if (!storeId) {
+      return NextResponse.json({ error: "store_id required" }, { status: 400 })
+    }
+  } else {
+    const supabase = await createServerSupabaseClient()
+    const { data: { user } } = await supabase?.auth.getUser() ?? { data: { user: null } }
 
-  if (!profile?.store_id && profile?.role === "merchant") {
-    return NextResponse.json({ error: "No store found" }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase!
+      .from("profiles")
+      .select("store_id, role")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile?.store_id && profile?.role === "merchant") {
+      return NextResponse.json({ error: "No store found" }, { status: 404 })
+    }
+
+    storeId = body.store_id || profile?.store_id
+    if (!storeId) {
+      return NextResponse.json({ error: "store_id required" }, { status: 400 })
+    }
   }
 
   try {
     const body = await request.json()
-    const { to, message, template_name, components } = body as {
-      to: string
-      message?: string
-      template_name?: string
-      components?: Record<string, unknown>[]
-    }
+    const { to, message, template_name, components } = body
 
-    // Allow admins to specify store_id, otherwise use merchant's own store
-    const storeId = body.store_id || profile?.store_id
-    if (!storeId) {
-      return NextResponse.json({ error: "store_id required" }, { status: 400 })
-    }
+    const supabase = getAdminClient()
 
-    // Get merchant's WhatsApp settings
     const { data: settings } = await supabase!
       .from("whatsapp_settings")
       .select("*")
@@ -77,7 +84,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Log the message
     if (result) {
       const waMessageId = result?.messages?.[0]?.id
       await supabase!

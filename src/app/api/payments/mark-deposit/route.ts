@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { triggerN8nWorkflow, buildN8nPayload } from "@/lib/n8n"
-import { N8N_EVENTS } from "@/lib/constants"
+import { sendDepositReceived } from "@/lib/whatsapp-notification"
 
 export async function POST(request: Request) {
   const cookieStore = await cookies()
@@ -67,24 +66,16 @@ export async function POST(request: Request) {
     })
     .eq("id", order_id)
 
-  const { data: store } = await supabase
-    .from("stores")
-    .select("name")
-    .eq("id", profile.store_id)
+  const { data: customer } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("id", order.customer_id)
     .single()
 
-  triggerN8nWorkflow("emerald-deposit-received", buildN8nPayload(
-    N8N_EVENTS.DEPOSIT_PAID,
-    profile.store_id,
-    {
-      order_id: order.id,
-      order_number: order.order_number,
-      deposit_amount: depositAmount,
-      deposit_percentage: pct,
-      method: "manual",
-    },
-    store?.name
-  ))
+  if (customer) {
+    const updatedOrder = { ...order, deposit_amount: depositAmount, remaining_amount: remaining, deposit_percentage: pct }
+    sendDepositReceived(profile.store_id, updatedOrder, customer)
+  }
 
   return NextResponse.json({
     success: true,
