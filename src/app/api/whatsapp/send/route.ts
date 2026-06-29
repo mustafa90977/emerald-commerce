@@ -47,6 +47,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (!storeId) {
+    return NextResponse.json({ error: "store_id required" }, { status: 400 })
+  }
+
   try {
     const { to, message, template_name, components } = body as {
       to: string
@@ -55,9 +59,12 @@ export async function POST(request: NextRequest) {
       components?: Record<string, unknown>[]
     }
 
-    const supabase = getAdminClient()
+    const admin = getAdminClient()
+    if (!admin) {
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    }
 
-    const { data: settings } = await supabase!
+    const { data: settings } = await admin
       .from("whatsapp_settings")
       .select("*")
       .eq("store_id", storeId)
@@ -96,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     if (result) {
       const waMessageId = result?.messages?.[0]?.id
-      await supabase!
+      await admin
         .from("whatsapp_messages")
         .insert({
           store_id: storeId,
