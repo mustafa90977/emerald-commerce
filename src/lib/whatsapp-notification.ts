@@ -30,7 +30,7 @@ async function getWhatsAppSettings(storeId: string) {
     .eq("store_id", storeId)
     .single()
 
-  return data as Record<string, unknown> | null
+  return data as any
 }
 
 async function logMessage(params: {
