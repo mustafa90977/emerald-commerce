@@ -21,7 +21,7 @@ interface CustomerData {
 }
 
 async function getWhatsAppSettings(storeId: string) {
-  const supabase = getAdminClient()
+  const supabase = getAdminClient() as any
   if (!supabase) return null
 
   const { data } = await supabase
@@ -30,7 +30,7 @@ async function getWhatsAppSettings(storeId: string) {
     .eq("store_id", storeId)
     .single()
 
-  return data
+  return data as Record<string, unknown> | null
 }
 
 async function logMessage(params: {
@@ -41,10 +41,10 @@ async function logMessage(params: {
   waMessageId?: string
   metadata?: Record<string, unknown>
 }) {
-  const supabase = getAdminClient()
-  if (!supabase) return
+  const db = getAdminClient() as any
+  if (!db) return
 
-  await supabase.from("whatsapp_messages").insert({
+  await db.from("whatsapp_messages").insert({
     store_id: params.storeId,
     order_id: params.orderId || null,
     customer_id: params.customerId || null,
