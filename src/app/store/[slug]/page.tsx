@@ -50,7 +50,7 @@ export default async function StorePage({ params }: Props) {
   return (
     <StoreLayout template={template}>
       <StoreHeader template={template} name={store.name as string} logo={(store.logo as string) || undefined} description={(store.description as string) || undefined} />
-      <ProductGrid products={(products as Record<string, unknown>[]) ?? []} template={template} />
+      <ProductGrid products={(products ?? []) as any} template={template} />
     </StoreLayout>
   )
 }
